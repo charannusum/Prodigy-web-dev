@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #dfe234, #b0b38e);
+            color: #fff;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .game-info {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .game-mode {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .game-mode button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .game-mode button.active {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin: 0 auto 20px;
+            width: 300px;
+            height: 300px;
+        }
+
+        .cell {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cell:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .cell.x {
+            color: #e74c3c;
+        }
+
+        .cell.o {
+            color: #2ecc71;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        #resetBtn {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        #resetBtn:hover {
+            background-color: #e67e22;
+        }
+
+        .winning-cell {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .game-board {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .cell {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic-Tac-Toe</h1>
+        <div class="game-info" id="gameInfo">Player X's turn</div>
+        
+        <div class="game-mode">
+            <button id="pvpBtn" class="active">Player vs Player</button>
+            <button id="pvcBtn">Player vs Computer</button>
+        </div>
+        
+        <div class="game-board" id="gameBoard">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="resetBtn">Reset Game</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const gameBoard = document.getElementById('gameBoard');
+        const cells = document.querySelectorAll('.cell');
+        const gameInfo = document.getElementById('gameInfo');
+        const resetBtn = document.getElementById('resetBtn');
+        const pvpBtn = document.getElementById('pvpBtn');
+        const pvcBtn = document.getElementById('pvcBtn');
+
+        // Game Variables
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let gameMode = 'pvp'; // 'pvp' or 'pvc'
+
+        // Winning Conditions
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+            [0, 4, 8], [2, 4, 6]             // diagonals
+        ];
+
+        // Initialize Game
+        function initGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            gameInfo.textContent = `Player ${currentPlayer}'s turn`;
+            
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('x', 'o', 'winning-cell');
+            });
+        }
+
+        // Handle Cell Click
+        function handleCellClick(e) {
+            const clickedCell = e.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+            
+            // If cell already used or game not active, ignore
+            if (board[clickedCellIndex] !== '' || !gameActive) return;
+            
+            // Process the move
+            processMove(clickedCell, clickedCellIndex);
+            
+            // If playing against computer and game is still active
+            if (gameMode === 'pvc' && gameActive && currentPlayer === 'O') {
+                setTimeout(computerMove, 500); // Add slight delay for better UX
+            }
+        }
+
+        // Process a move
+        function processMove(cell, index) {
+            // Update board and UI
+            board[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.classList.add(currentPlayer.toLowerCase());
+            
+            // Check for win or draw
+            if (checkWin()) {
+                gameInfo.textContent = `Player ${currentPlayer} wins!`;
+                gameActive = false;
+                return;
+            } else if (checkDraw()) {
+                gameInfo.textContent = "Game ended in a draw!";
+                gameActive = false;
+                return;
+            }
+            
+            // Switch player
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            gameInfo.textContent = `Player ${currentPlayer}'s turn`;
+        }
+
+        // Check for win
+        function checkWin() {
+            for (let condition of winningConditions) {
+                const [a, b, c] = condition;
+                
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    // Highlight winning cells
+                    cells[a].classList.add('winning-cell');
+                    cells[b].classList.add('winning-cell');
+                    cells[c].classList.add('winning-cell');
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Check for draw
+        function checkDraw() {
+            return board.every(cell => cell !== '');
+        }
+
+        // Computer move (AI)
+        function computerMove() {
+            if (!gameActive) return;
+            
+            // Simple AI - first try to win, then block, then random
+            let move = findWinningMove('O') || 
+                       findWinningMove('X') || 
+                       findRandomMove();
+            
+            if (move !== null) {
+                const cell = cells[move];
+                processMove(cell, move);
+            }
+        }
+
+        // Find a winning move for the given player
+        function findWinningMove(player) {
+            for (let condition of winningConditions) {
+                const [a, b, c] = condition;
+                // Check if two in a row and third is empty
+                if (board[a] === player && board[b] === player && board[c] === '') return c;
+                if (board[a] === player && board[c] === player && board[b] === '') return b;
+                if (board[b] === player && board[c] === player && board[a] === '') return a;
+            }
+            return null;
+        }
+
+        // Find a random empty cell
+        function findRandomMove() {
+            const emptyCells = board.map((cell, index) => cell === '' ? index : null).filter(val => val !== null);
+            return emptyCells.length > 0 ? emptyCells[Math.floor(Math.random() * emptyCells.length)] : null;
+        }
+
+        // Change game mode
+        function changeGameMode(mode) {
+            gameMode = mode;
+            if (mode === 'pvp') {
+                pvpBtn.classList.add('active');
+                pvcBtn.classList.remove('active');
+            } else {
+                pvpBtn.classList.remove('active');
+                pvcBtn.classList.add('active');
+            }
+            initGame();
+        }
+
+        // Event Listeners
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        resetBtn.addEventListener('click', initGame);
+        pvpBtn.addEventListener('click', () => changeGameMode('pvp'));
+        pvcBtn.addEventListener('click', () => changeGameMode('pvc'));
+
+        // Initialize the game
+        initGame();
+    </script>
+</body>
+</html>
